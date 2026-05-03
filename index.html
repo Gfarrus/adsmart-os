@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdSmart OS — Business Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0A1628;
+    --navy2: #0F1E35;
+    --azure: #4A9EE8;
+    --orange: #F97316;
+    --white: #F0F4FF;
+    --muted: #8899AA;
+    --glass: rgba(74,158,232,0.07);
+    --border: rgba(74,158,232,0.18);
+    --green: #22C55E;
+    --yellow: #EAB308;
+    --red: #EF4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:var(--white); font-family:'Barlow',sans-serif; font-weight:300; min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(74,158,232,0.04) 1px,transparent 1px), linear-gradient(90deg,rgba(74,158,232,0.04) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+  .app { position:relative; z-index:1; }
+
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 32px; border-bottom:1px solid var(--border); background:rgba(10,22,40,0.9); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; flex-wrap:wrap; gap:12px; }
+  .logo { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:22px; letter-spacing:2px; text-transform:uppercase; }
+  .logo span { color:var(--orange); }
+  .tagline { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+  .header-right { display:flex; align-items:center; gap:20px; }
+  .target-badge { background:linear-gradient(135deg,var(--orange),#e05e0a); padding:6px 16px; border-radius:2px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px; letter-spacing:1px; }
+
+  .nav { display:flex; gap:0; padding:0 32px; border-bottom:1px solid var(--border); background:rgba(10,22,40,0.7); overflow-x:auto; }
+  .nav-tab { padding:14px 20px; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .nav-tab:hover { color:var(--white); }
+  .nav-tab.active { color:var(--azure); border-bottom-color:var(--azure); }
+
+  main { padding:32px; max-width:1400px; margin:0 auto; }
+  .panel { display:none; }
+  .panel.active { display:block; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  /* LOADING */
+  .loading { display:flex; align-items:center; gap:8px; color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:2px; padding:20px 0; }
+  .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--azure); border-radius:50%; animation:spin 0.6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--navy2); border:1px solid var(--border); border-left:3px solid var(--green); padding:12px 20px; font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:1px; z-index:500; opacity:0; transform:translateY(10px); transition:all 0.3s; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateY(0); }
+  .toast.error { border-left-color:var(--red); }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:20px; }
+  .card { background:var(--glass); border:1px solid var(--border); padding:24px; }
+  .card-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:3px; color:var(--orange); text-transform:uppercase; margin-bottom:12px; }
+  .card h3 { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:18px; margin-bottom:12px; color:var(--white); }
+  .card p,.card li { font-size:13px; color:var(--muted); line-height:1.8; }
+  .card ul { padding-left:14px; }
+  .card li { margin-bottom:4px; }
+
+  .section-title { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:13px; letter-spacing:4px; color:var(--orange); text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:12px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .badge { display:inline-block; padding:3px 8px; font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:1px; font-weight:600; }
+  .badge-azure { background:rgba(74,158,232,0.15); color:var(--azure); }
+  .badge-orange { background:rgba(249,115,22,0.15); color:var(--orange); }
+  .badge-green { background:rgba(34,197,94,0.15); color:var(--green); }
+  .badge-red { background:rgba(239,68,68,0.15); color:var(--red); }
+
+  /* KPI BAR */
+  .kpi-bar { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:28px; }
+  .kpi { background:var(--glass); border:1px solid var(--border); padding:20px; text-align:center; }
+  .kpi-val { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:36px; color:var(--white); line-height:1; margin-bottom:4px; }
+  .kpi-val.orange { color:var(--orange); }
+  .kpi-val.azure { color:var(--azure); }
+  .kpi-val.green { color:var(--green); }
+  .kpi-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+  .progress-bar-wrap { background:rgba(255,255,255,0.06); height:4px; margin-top:8px; border-radius:2px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--azure),var(--orange)); border-radius:2px; transition:width 1s ease; }
+  .progress-toward { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* PIPELINE BOARD */
+  .pipeline-board { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stage-col { background:rgba(255,255,255,0.02); border:1px solid var(--border); padding:16px; }
+  .stage-header { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:16px; padding-bottom:10px; border-bottom:2px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .stage-count { background:var(--border); width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--white); }
+  .opp-card { background:var(--navy2); border:1px solid var(--border); border-left:3px solid var(--border); padding:12px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
+  .opp-card:hover { border-color:var(--azure); background:rgba(74,158,232,0.06); }
+  .opp-card.bu-apex { border-left-color:var(--green); }
+  .opp-card.bu-adsmart { border-left-color:var(--azure); }
+  .opp-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--white); margin-bottom:4px; }
+  .opp-meta { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:8px; }
+  .opp-value { font-family:'Barlow Condensed',sans-serif; font-weight:700; color:var(--orange); font-size:13px; }
+  .add-opp-btn { width:100%; border:1px dashed var(--border); background:transparent; color:var(--muted); padding:10px; font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .add-opp-btn:hover { border-color:var(--azure); color:var(--azure); }
+
+  /* DEALS TABLE */
+  .deals-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .deals-table th { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:10px 16px; text-align:left; border-bottom:1px solid var(--border); }
+  .deals-table td { padding:12px 16px; border-bottom:1px solid rgba(74,158,232,0.08); color:var(--muted); }
+  .deals-table td:first-child { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--white); }
+  .deals-table tr:hover td { background:rgba(74,158,232,0.04); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--navy2); border:1px solid var(--border); padding:32px; width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+  .modal h3 { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:20px; margin-bottom:20px; color:var(--white); }
+  .form-group { margin-bottom:16px; }
+  .form-label { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px; }
+  .form-input,.form-select,.form-textarea { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--white); padding:10px 14px; font-family:'Barlow',sans-serif; font-size:14px; outline:none; transition:border-color 0.2s; }
+  .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--azure); }
+  .form-select option { background:var(--navy2); }
+  .form-textarea { resize:vertical; min-height:80px; }
+  .btn-row { display:flex; gap:12px; margin-top:20px; }
+  .btn-primary { background:var(--azure); color:var(--navy); border:none; padding:10px 24px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:background 0.2s; }
+  .btn-primary:hover { background:#6ab5f0; }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-secondary { background:transparent; color:var(--muted); border:1px solid var(--border); padding:10px 24px; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:13px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .btn-secondary:hover { border-color:var(--muted); color:var(--white); }
+  .btn-danger { background:rgba(239,68,68,0.15); color:var(--red); border:1px solid rgba(239,68,68,0.3); padding:10px 24px; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:13px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
+
+  /* POSITIONING */
+  .positioning-hero { background:linear-gradient(135deg,var(--navy2) 0%,rgba(74,158,232,0.08) 100%); border:1px solid var(--border); border-left:4px solid var(--orange); padding:32px 40px; margin-bottom:28px; }
+  .positioning-hero h2 { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:13px; letter-spacing:4px; color:var(--orange); text-transform:uppercase; margin-bottom:16px; }
+  .elevator-pitch { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:32px; line-height:1.2; color:var(--white); margin-bottom:20px; }
+  .elevator-pitch em { color:var(--azure); font-style:normal; }
+  .one-liner { font-size:15px; color:var(--muted); line-height:1.7; max-width:700px; border-top:1px solid var(--border); padding-top:16px; margin-top:16px; }
+  .icp-pill { display:inline-block; background:rgba(74,158,232,0.12); border:1px solid rgba(74,158,232,0.3); color:var(--azure); padding:4px 12px; font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:1px; margin:3px 3px 3px 0; }
+  .differentiator { display:flex; gap:12px; align-items:flex-start; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .differentiator:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .diff-num { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:32px; color:var(--orange); opacity:0.4; line-height:1; min-width:32px; }
+  .diff-text strong { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:15px; color:var(--white); display:block; margin-bottom:3px; }
+  .diff-text span { font-size:12px; color:var(--muted); }
+
+  /* TEAM */
+  .team-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:24px; }
+  .team-card { background:var(--glass); border:1px solid var(--border); padding:24px; text-align:center; }
+  .team-avatar { width:56px; height:56px; border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:22px; color:var(--navy); }
+  .avatar-orange { background:var(--orange); }
+  .avatar-azure { background:var(--azure); }
+  .avatar-green { background:var(--green); }
+  .team-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:16px; color:var(--white); margin-bottom:4px; }
+  .team-role { font-size:12px; color:var(--muted); margin-bottom:12px; }
+  .team-tags { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; }
+  .team-tag { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:1px; padding:2px 8px; background:rgba(74,158,232,0.1); border:1px solid rgba(74,158,232,0.2); color:var(--azure); }
+
+  /* SPRINT */
+  .sprint-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+  .day-col { background:var(--glass); border:1px solid var(--border); padding:14px; }
+  .day-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:12px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .task-item { font-size:11px; color:var(--muted); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:flex-start; gap:6px; cursor:pointer; }
+  .task-item:last-child { border-bottom:none; }
+  .task-cb { width:12px; height:12px; border:1px solid var(--border); min-width:12px; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:8px; color:var(--green); }
+  .task-item.done .task-cb { border-color:var(--green); background:rgba(34,197,94,0.15); }
+  .task-item.done span { text-decoration:line-through; opacity:0.5; }
+
+  /* APEX / OG panels */
+  .timeline { position:relative; padding-left:24px; }
+  .timeline::before { content:''; position:absolute; left:6px; top:8px; bottom:8px; width:1px; background:var(--border); }
+  .tl-item { position:relative; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid rgba(74,158,232,0.06); }
+  .tl-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .tl-dot { position:absolute; left:-21px; top:4px; width:10px; height:10px; border-radius:50%; border:2px solid var(--border); background:var(--navy); }
+  .tl-dot.done { background:var(--green); border-color:var(--green); }
+  .tl-dot.active { background:var(--orange); border-color:var(--orange); }
+  .tl-dot.next { background:var(--azure); border-color:var(--azure); }
+  .tl-phase { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; color:var(--white); margin-bottom:3px; }
+  .tl-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+  .tl-date { font-family:'Barlow Condensed',sans-serif; font-size:11px; color:var(--orange); margin-bottom:4px; }
+
+  .dot-live { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:6px; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  @media(max-width:900px) {
+    .grid-2,.grid-3,.kpi-bar,.pipeline-board,.team-grid { grid-template-columns:1fr; }
+    .sprint-grid { grid-template-columns:repeat(2,1fr); }
+    main { padding:16px; }
+    header { padding:14px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div>
+    <div class="logo">AdSmart <span>OS</span></div>
+    <div class="tagline">Business Command Center · 2026</div>
+  </div>
+  <nav class="nav" style="position:static;border:none;background:transparent;padding:0;">
+    <div class="nav-tab active" onclick="showPanel('positioning',this)">Posicionamiento</div>
+    <div class="nav-tab" onclick="showPanel('pipeline',this)">Pipeline</div>
+    <div class="nav-tab" onclick="showPanel('deals',this)">Cierres</div>
+    <div class="nav-tab" onclick="showPanel('apex',this)">Apex Nativa</div>
+    <div class="nav-tab" onclick="showPanel('oilgas',this)">Ecosistema O&G</div>
+    <div class="nav-tab" onclick="showPanel('equipo',this)">Equipo & Sprint</div>
+  </nav>
+  <div class="header-right">
+    <span class="dot-live"></span>
+    <div class="target-badge">TARGET $12K/MES</div>
+  </div>
+</header>
+
+<main>
+
+<!-- ====== PANEL: POSICIONAMIENTO ====== -->
+<div id="panel-positioning" class="panel active">
+  <div class="positioning-hero">
+    <h2>Propuesta de Valor · AdSmart Media 2026</h2>
+    <div class="elevator-pitch">Innovación y negocios estratégicos<br>basados en <em>datos determinísticos y AI.</em><br><em>Tres unidades. Un solo comando.</em></div>
+    <div class="one-liner">Gonzalo Farrus combina +20 años de expertise programático, certificación IAB USA y representación de tecnología en LATAM con capacidad de implementación AI concreta — opera tres unidades de negocio con un stack de datos determinísticos propio de 28M registros.</div>
+  </div>
+
+  <div class="section-title">UN1 — AdSmart Business · Media</div>
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card" style="border-left:3px solid var(--azure);">
+      <div class="card-label">Pitch de 10 segundos</div>
+      <h3>"Llegamos a tu cliente ideal con datos reales, no cookies. 28 millones de perfiles determinísticos activados en email, programática y redes."</h3>
+    </div>
+    <div class="card" style="border-left:3px solid var(--azure);">
+      <div class="card-label">Modelo & Equipo</div>
+      <ul style="margin-top:4px;">
+        <li>Tecnología: <strong style="color:var(--white);">Datiko</strong> — 28M registros determinísticos</li>
+        <li>Canales: Email programático, DV360, Redes Sociales</li>
+        <li>Cliente activo: <strong style="color:var(--orange);">American Express</strong></li>
+        <li>Equipo: Gonzalo + Cecilia + 3 propios + 6 CommonSense Data</li>
+        <li>Modelo: <strong style="color:var(--white);">Revenue Share 30%</strong></li>
+        <li>Pipeline target: <strong style="color:var(--green);">$3,000 USD/mes</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title">UN2 — AdSmart Consulting</div>
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card" style="border-left:3px solid var(--orange);">
+      <div class="card-label">Pitch de 10 segundos</div>
+      <h3>"Convertimos AI y datos determinísticos en modelos de negocio que generan revenue. Desde estrategia hasta implementación."</h3>
+    </div>
+    <div class="card" style="border-left:3px solid var(--orange);">
+      <div class="card-label">Servicio Estrella — Live Shopping Bancario</div>
+      <p style="font-size:13px;color:var(--white);margin-bottom:8px;">Modelo de performance de venta AI en YouTube para marketplaces de bancos.</p>
+      <p style="font-size:12px;color:var(--muted);">El banco activa su catálogo en transmisiones en vivo optimizadas con AI, generando conversión directa desde el stream.</p>
+      <p style="margin-top:10px;font-size:12px;"><strong style="color:var(--green);">Pipeline target: $3,000 USD/mes</strong></p>
+    </div>
+  </div>
+
+  <div class="section-title">UN3 — Wellness · Apex Nativa</div>
+  <div class="grid-2" style="margin-bottom:28px;">
+    <div class="card" style="border-left:3px solid var(--green);">
+      <div class="card-label">Pitch de 10 segundos</div>
+      <h3>"Suplementos importados con respaldo regulatorio ANMAT. Del laboratorio al cliente final con inteligencia de datos."</h3>
+    </div>
+    <div class="card" style="border-left:3px solid var(--green);">
+      <div class="card-label">Estado Operativo</div>
+      <ul style="margin-top:4px;">
+        <li>ANMAT: <strong style="color:var(--green);">Registrado ✓</strong></li>
+        <li>Revenue actual: <strong style="color:var(--orange);">$3,000 USD/mes</strong></li>
+        <li>Modelo actual: gestión comercial (partner revende)</li>
+        <li>Próximo (~2 meses): <strong style="color:var(--white);">Reventa directa propia</strong></li>
+        <li>Q3 2026: Marketplaces ML + Amazon AR</li>
+        <li>Pipeline target: <strong style="color:var(--green);">$6,000 USD/mes</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title">Track Record · Clientes AdSmart</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px;">
+    <div class="card" style="padding:16px;text-align:center;"><div class="card-label" style="margin-bottom:8px;">Banca</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);line-height:1.8;">HSBC<br>American Express<br>BBVA</div></div>
+    <div class="card" style="padding:16px;text-align:center;"><div class="card-label" style="margin-bottom:8px;">Automotriz</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);line-height:1.8;">Ford Argentina<br>Grupo Kia México</div></div>
+    <div class="card" style="padding:16px;text-align:center;"><div class="card-label" style="margin-bottom:8px;">Consumo Masivo</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);line-height:1.8;">CCU Argentina<br>Citric Argentina</div></div>
+    <div class="card" style="padding:16px;text-align:center;"><div class="card-label" style="margin-bottom:8px;">Medios</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);line-height:1.8;">Turner</div></div>
+    <div class="card" style="padding:16px;text-align:center;"><div class="card-label" style="margin-bottom:8px;">Agencias</div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);line-height:1.8;">PHD</div></div>
+  </div>
+
+  <div class="section-title">Diferenciadores & ICP</div>
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="differentiator"><div class="diff-num">01</div><div class="diff-text"><strong>28M registros determinísticos propios</strong><span>Ninguna agencia argentina tiene este activo. Datiko es el motor de UN1 y diferenciador estructural.</span></div></div>
+      <div class="differentiator"><div class="diff-num">02</div><div class="diff-text"><strong>AI implementada, no prometida</strong><span>Early adopter con track record real. Agentes, automatizaciones y modelos funcionando en producción.</span></div></div>
+      <div class="differentiator"><div class="diff-num">03</div><div class="diff-text"><strong>Sin competencia en el nicho</strong><span>Datos determinísticos + AI + industria pesada LATAM: ventana abierta, primero en llegar gana.</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-label">ICP por Unidad</div>
+      <p style="font-size:12px;color:var(--white);margin-bottom:6px;"><strong>UN1 Media:</strong></p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Empresa con base de clientes activa. Banca, Automotriz, Consumo Masivo.</p>
+      <p style="font-size:12px;color:var(--white);margin-bottom:6px;"><strong>UN2 Consulting:</strong></p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">C-Suite en O&G, Minería o Banca con mandato de modernización. Budget >$50K USD/año.</p>
+      <p style="font-size:12px;color:var(--white);margin-bottom:6px;"><strong>UN3 Wellness:</strong></p>
+      <p style="font-size:12px;color:var(--muted);">Consumidor final health-conscious, 30-55 años, poder adquisitivo medio-alto, Argentina.</p>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(74,158,232,0.1));border:1px solid var(--border);padding:20px;display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;">Target Combinado 2026</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--azure);">$3K</div><div style="font-size:10px;color:var(--muted);letter-spacing:1px;">UN1 MEDIA</div></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--muted);">+</div>
+      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange);">$3K</div><div style="font-size:10px;color:var(--muted);letter-spacing:1px;">UN2 CONSULTING</div></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--muted);">+</div>
+      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--green);">$6K</div><div style="font-size:10px;color:var(--muted);letter-spacing:1px;">UN3 WELLNESS</div></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--muted);">=</div>
+      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:36px;color:var(--white);">$12K</div><div style="font-size:10px;color:var(--orange);letter-spacing:2px;">TARGET/MES</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PANEL: PIPELINE ====== -->
+<div id="panel-pipeline" class="panel">
+  <div class="kpi-bar">
+    <div class="kpi"><div class="kpi-val azure" id="kpi-total">—</div><div class="kpi-label">Oportunidades</div></div>
+    <div class="kpi"><div class="kpi-val orange" id="kpi-value">—</div><div class="kpi-label">Valor Pipeline</div><div class="progress-bar-wrap"><div class="progress-bar-fill" id="bar-pipeline" style="width:0%"></div></div><div class="progress-toward" id="pct-pipeline">—</div></div>
+    <div class="kpi"><div class="kpi-val green" id="kpi-revenue">$3,000</div><div class="kpi-label">Revenue Actual/mes</div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:25%"></div></div><div class="progress-toward">25% de $12K target</div></div>
+    <div class="kpi"><div class="kpi-val" id="kpi-gap">$9,000</div><div class="kpi-label">Gap al Target</div></div>
+    <div class="kpi"><div class="kpi-val orange" id="kpi-closes">—</div><div class="kpi-label">En Closing</div></div>
+  </div>
+
+  <div class="section-title">Board de Pipeline</div>
+  <div class="pipeline-board">
+    <div class="stage-col"><div class="stage-header">Prospecting<span class="stage-count" id="cnt-prospecting">0</span></div><div id="list-prospecting" class="loading"><div class="spinner"></div>cargando...</div><button class="add-opp-btn" onclick="openModal('prospecting')">+ Agregar</button></div>
+    <div class="stage-col"><div class="stage-header">Qualified<span class="stage-count" id="cnt-qualified">0</span></div><div id="list-qualified"></div><button class="add-opp-btn" onclick="openModal('qualified')">+ Agregar</button></div>
+    <div class="stage-col"><div class="stage-header">Propuesta<span class="stage-count" id="cnt-proposal">0</span></div><div id="list-proposal"></div><button class="add-opp-btn" onclick="openModal('proposal')">+ Agregar</button></div>
+    <div class="stage-col"><div class="stage-header">Closing<span class="stage-count" id="cnt-closing">0</span></div><div id="list-closing"></div><button class="add-opp-btn" onclick="openModal('closing')">+ Agregar</button></div>
+  </div>
+</div>
+
+<!-- ====== PANEL: CIERRES ====== -->
+<div id="panel-deals" class="panel">
+  <div class="kpi-bar" style="grid-template-columns:repeat(3,1fr);">
+    <div class="kpi"><div class="kpi-val green" id="deals-count">—</div><div class="kpi-label">Cierres Totales</div></div>
+    <div class="kpi"><div class="kpi-val orange" id="deals-total">—</div><div class="kpi-label">Revenue Cerrado</div></div>
+    <div class="kpi"><div class="kpi-val azure" id="deals-monthly">—</div><div class="kpi-label">Último Cierre</div></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div class="section-title" style="margin-bottom:0;">Cierres & Deals Ganados</div>
+    <button class="btn-primary" onclick="openDealModal()" style="font-size:11px;padding:8px 16px;">+ Registrar Cierre</button>
+  </div>
+
+  <div id="deals-loading" class="loading"><div class="spinner"></div>cargando...</div>
+  <table class="deals-table" id="deals-table" style="display:none;">
+    <thead><tr><th>Cliente / Deal</th><th>Unidad</th><th>Valor USD/mes</th><th>Fecha Cierre</th><th>Notas</th><th></th></tr></thead>
+    <tbody id="deals-tbody"></tbody>
+  </table>
+  <div id="deals-empty" style="display:none;padding:40px;text-align:center;color:var(--muted);font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;font-size:13px;">AÚN NO HAY CIERRES REGISTRADOS</div>
+</div>
+
+<!-- ====== PANEL: APEX ====== -->
+<div id="panel-apex" class="panel">
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div>
+      <div class="section-title">Estado Operativo</div>
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="kpi" style="background:var(--glass);border:1px solid var(--border);padding:20px;"><div class="kpi-val green">$3K</div><div class="kpi-label">Revenue/mes</div></div>
+        <div class="kpi" style="background:var(--glass);border:1px solid var(--border);padding:20px;"><div class="kpi-val azure">~2M</div><div class="kpi-label">Plazo Reventa</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Estructura societaria</div>
+        <ul style="margin-top:8px;">
+          <li><strong style="color:var(--white);">Eduardo Jorge</strong> — Adventures Capitals (Río de Janeiro). Fabrica complejos en polvo.</li>
+          <li><strong style="color:var(--white);">Health Icons Australia</strong> — Gomitas (socio: Jey)</li>
+          <li><strong style="color:var(--white);">Gonzalo + Cecilia</strong> — Importación, representación legal, logística AR</li>
+          <li><strong style="color:var(--orange);">MOOD</strong> — Próximo lanzamiento (Brasil). Gonzalo socio en ventas AR.</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Roadmap de Fases</div>
+      <div class="card">
+        <div class="timeline">
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">HOY</div><div class="tl-phase">Fase 1 — Gestión y Consultoría</div><div class="tl-desc">ANMAT registrado. Importación activa. $3K/mes.</div></div>
+          <div class="tl-item"><div class="tl-dot active"></div><div class="tl-date">+2 MESES</div><div class="tl-phase">Fase 2 — Reventa Directa + MOOD</div><div class="tl-desc">Gonzalo toma el canal de reventa. Lanzamiento MOOD (Brasil). eCommerce propio.</div></div>
+          <div class="tl-item"><div class="tl-dot next"></div><div class="tl-date">Q3 2026</div><div class="tl-phase">Fase 3 — Marketplaces</div><div class="tl-desc">Expansión a Mercado Libre, Amazon.com.ar.</div></div>
+          <div class="tl-item"><div class="tl-dot"></div><div class="tl-date">Q4 2026</div><div class="tl-phase">Fase 4 — Escala LATAM</div><div class="tl-desc">Replicar modelo en Chile/Uruguay/Colombia.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PANEL: ECOSISTEMA O&G ====== -->
+<div id="panel-oilgas" class="panel">
+  <div class="positioning-hero" style="border-left-color:var(--azure);">
+    <h2>Ecosistema Oil & Gas · Neuquén 2026</h2>
+    <div class="elevator-pitch" style="font-size:24px;">Presencia territorial en la <em>cuenca petrolera</em><br>con red de socios técnicos, financieros y tecnológicos.</div>
+  </div>
+
+  <div class="section-title">Socios Core</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
+    <div class="card" style="border-left:3px solid var(--azure);"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;"><div class="team-avatar avatar-azure" style="width:44px;height:44px;font-size:16px;min-width:44px;">RG</div><div><div class="team-name" style="text-align:left;">Rodrigo Garcia Berro</div><div class="team-role" style="text-align:left;">Ingeniero en Petróleo · ITB</div></div></div><div class="team-tags" style="justify-content:flex-start;"><span class="team-tag">Expertise Técnico O&G</span></div></div>
+    <div class="card" style="border-left:3px solid var(--orange);"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;"><div class="team-avatar avatar-orange" style="width:44px;height:44px;font-size:16px;min-width:44px;">JS</div><div><div class="team-name" style="text-align:left;">Juan Stenigzaler</div><div class="team-role" style="text-align:left;">Contador · Partner de Negocio</div></div></div><div class="team-tags" style="justify-content:flex-start;"><span class="team-tag">Estructura Financiera</span></div></div>
+    <div class="card" style="border-left:3px solid var(--azure);"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;"><div style="width:44px;height:44px;min-width:44px;border-radius:50%;background:rgba(249,115,22,0.2);color:var(--orange);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;">AC</div><div><div class="team-name" style="text-align:left;">Augusto Clement</div><div class="team-role" style="text-align:left;">Dueño · SUMATO AI</div></div></div><div class="team-tags" style="justify-content:flex-start;"><span class="team-tag">AI Aplicada a Industria</span></div></div>
+    <div class="card" style="border-left:3px solid var(--green);"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;"><div style="width:44px;height:44px;min-width:44px;border-radius:50%;background:rgba(34,197,94,0.2);color:var(--green);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;">JC</div><div><div class="team-name" style="text-align:left;">Jorge Colla</div><div class="team-role" style="text-align:left;">Director Negocios · Univ. San Andrés</div></div></div><div class="team-tags" style="justify-content:flex-start;"><span class="team-tag">Academia</span><span class="team-tag">Red Ejecutiva</span></div></div>
+    <div class="card" style="border-left:3px solid var(--orange);"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;"><div class="team-avatar avatar-orange" style="width:44px;height:44px;font-size:16px;min-width:44px;">DM</div><div><div class="team-name" style="text-align:left;">Diego Manfio</div><div class="team-role" style="text-align:left;">Sima Ingeniería · Polo Tecnológico Neuquén</div></div></div><div class="team-tags" style="justify-content:flex-start;"><span class="team-tag">Infraestructura Física</span><span class="team-tag">Polo Tecnológico</span></div></div>
+  </div>
+
+  <div class="section-title">Socios Comerciales</div>
+  <div class="grid-2">
+    <div class="card" style="border-left:3px solid var(--muted);"><div class="team-name" style="text-align:left;margin-bottom:4px;">Intermac SA</div><div class="team-role" style="text-align:left;margin-bottom:10px;">Venta de Maquinaria Industrial</div><p style="font-size:12px;">Ditch Witch, Trencher y otras marcas para perforación y construcción en industria petrolera.</p></div>
+    <div class="card" style="border-left:3px solid var(--muted);"><div class="team-name" style="text-align:left;margin-bottom:4px;">Gabriel Moni</div><div class="team-role" style="text-align:left;margin-bottom:10px;">Casas Prefabricadas · SHAP</div><p style="font-size:12px;">Vivienda prefabricada china para campamentos y personal en Vaca Muerta.</p></div>
+  </div>
+</div>
+
+<!-- ====== PANEL: EQUIPO & SPRINT ====== -->
+<div id="panel-equipo" class="panel">
+  <div class="section-title">Equipo</div>
+  <div class="team-grid">
+    <div class="team-card"><div class="team-avatar avatar-orange">G</div><div class="team-name">Gonzalo Farrus</div><div class="team-role">Founder & CEO · AdSmart + Apex</div><div class="team-tags"><span class="team-tag">AI Strategy</span><span class="team-tag">Programmatic</span><span class="team-tag">Bizdev</span></div></div>
+    <div class="team-card"><div class="team-avatar avatar-azure" style="background:rgba(74,158,232,0.3);color:var(--azure);">C</div><div class="team-name">Cecilia Radrizzani</div><div class="team-role">Socia · AdSmart + Apex</div><div class="team-tags"><span class="team-tag">Gestión</span><span class="team-tag">Operaciones</span><span class="team-tag">Bizdev</span></div></div>
+    <div class="team-card"><div class="team-avatar" style="background:rgba(136,153,170,0.2);color:var(--muted);">S1</div><div class="team-name">Colaborador 1</div><div class="team-role">Área: — (completar)</div><div class="team-tags"><span class="team-tag">Rol: —</span></div></div>
+  </div>
+
+  <div class="section-title">Sprint Semanal</div>
+  <div class="sprint-grid" id="sprint-grid"><div class="loading"><div class="spinner"></div>cargando...</div></div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL: NUEVA OPORTUNIDAD -->
+<div class="modal-overlay" id="modal-opp" onclick="closeModalOpp(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-opp-title">Nueva Oportunidad</h3>
+    <div class="form-group"><label class="form-label">Nombre / Empresa</label><input class="form-input" id="f-name" placeholder="Ej: YPF - AI Strategy"></div>
+    <div class="form-group"><label class="form-label">Unidad de Negocio</label><select class="form-select" id="f-bu"><option value="adsmart">AdSmart</option><option value="apex">Apex Nativa</option></select></div>
+    <div class="form-group"><label class="form-label">Vertical</label><select class="form-select" id="f-vertical"><option>Oil & Gas</option><option>Minería</option><option>Automotriz</option><option>Banca</option><option>Consumo Masivo</option><option>Wellness</option><option>Datiko</option><option>CommonSense</option><option>Otro</option></select></div>
+    <div class="form-group"><label class="form-label">Valor Estimado (USD/mes)</label><input class="form-input" id="f-value" type="number" placeholder="3000"></div>
+    <div class="form-group"><label class="form-label">Etapa</label><select class="form-select" id="f-stage"><option value="prospecting">Prospecting</option><option value="qualified">Qualified</option><option value="proposal">Propuesta</option><option value="closing">Closing</option></select></div>
+    <div class="form-group"><label class="form-label">Próximo paso</label><input class="form-input" id="f-next" placeholder="Ej: Llamada discovery 6 mayo"></div>
+    <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="f-notes" placeholder="Contexto, contacto, urgencia..."></textarea></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-save-opp" onclick="saveOpp()">Guardar</button>
+      <button class="btn-secondary" onclick="document.getElementById('modal-opp').classList.remove('open')">Cancelar</button>
+      <button class="btn-danger" id="btn-delete-opp" style="display:none;margin-left:auto;" onclick="deleteOpp()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO CIERRE -->
+<div class="modal-overlay" id="modal-deal" onclick="closeModalDeal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Registrar Cierre</h3>
+    <div class="form-group"><label class="form-label">Cliente / Deal</label><input class="form-input" id="d-name" placeholder="Ej: AMEX — Media Campaign"></div>
+    <div class="form-group"><label class="form-label">Unidad de Negocio</label><select class="form-select" id="d-bu"><option value="adsmart">AdSmart</option><option value="apex">Apex Nativa</option></select></div>
+    <div class="form-group"><label class="form-label">Valor USD/mes</label><input class="form-input" id="d-value" type="number" placeholder="3000"></div>
+    <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="d-notes" placeholder="Detalles del cierre..."></textarea></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-save-deal" onclick="saveDeal()">Registrar</button>
+      <button class="btn-secondary" onclick="document.getElementById('modal-deal').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL = 'https://qwhogengkrfzrfpqjmrq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3aG9nZW5na3JmenJmcHFqbXJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3ODY0ODIsImV4cCI6MjA5MzM2MjQ4Mn0.Lvz-hj7419pdEZEx9NiVtNNbfGAi3FE5rHXj_L7cC5A';
+const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+
+let editingOppId = null;
+let currentStage = 'prospecting';
+
+// ---- SUPABASE HELPERS ----
+async function sbGet(table, params='') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { headers: HEADERS });
+  return r.json();
+}
+async function sbPost(table, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, { method:'POST', headers: HEADERS, body: JSON.stringify(body) });
+  return r.json();
+}
+async function sbPatch(table, id, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers: HEADERS, body: JSON.stringify(body) });
+  return r.ok;
+}
+async function sbDelete(table, id) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: HEADERS });
+  return r.ok;
+}
+
+// ---- TOAST ----
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type==='error' ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ---- TABS ----
+function showPanel(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'pipeline') loadPipeline();
+  if (id === 'deals') loadDeals();
+  if (id === 'equipo') loadSprint();
+}
+
+// ---- PIPELINE ----
+async function loadPipeline() {
+  const opps = await sbGet('opportunities', 'order=created_at.asc');
+  const stages = ['prospecting','qualified','proposal','closing'];
+  let totalVal = 0, closingCount = 0;
+
+  stages.forEach(s => {
+    const list = document.getElementById('list-' + s);
+    const cnt = document.getElementById('cnt-' + s);
+    const items = opps.filter(o => o.stage === s);
+    cnt.textContent = items.length;
+    list.innerHTML = '';
+    items.forEach(o => {
+      totalVal += o.value || 0;
+      if (s === 'closing') closingCount++;
+      list.appendChild(buildOppCard(o));
+    });
+  });
+
+  document.getElementById('kpi-total').textContent = opps.length;
+  document.getElementById('kpi-value').textContent = '$' + totalVal.toLocaleString();
+  document.getElementById('kpi-closes').textContent = closingCount;
+  const pct = Math.min(100, Math.round((totalVal / 12000) * 100));
+  document.getElementById('bar-pipeline').style.width = pct + '%';
+  document.getElementById('pct-pipeline').textContent = pct + '% del objetivo $12K';
+  document.getElementById('kpi-gap').textContent = '$' + Math.max(0, 12000 - 3000).toLocaleString();
+}
+
+function buildOppCard(o) {
+  const stageNext = { prospecting:'qualified', qualified:'proposal', proposal:'closing', closing:null };
+  const stagePrev = { prospecting:null, qualified:'prospecting', proposal:'qualified', closing:'proposal' };
+  const div = document.createElement('div');
+  div.className = 'opp-card bu-' + o.bu;
+  div.innerHTML = `
+    <div class="opp-name">${o.name}</div>
+    <div style="font-size:11px;color:var(--muted);">${o.vertical || ''}</div>
+    <div class="opp-meta">
+      <span class="opp-value">${o.value > 0 ? '$'+o.value.toLocaleString() : '—'}/mes</span>
+      <span>${o.bu === 'apex' ? '🟢 Apex' : '🔵 AdSmart'}</span>
+    </div>
+    ${o.next_step ? `<div style="font-size:10px;color:var(--azure);margin-top:6px;">→ ${o.next_step}</div>` : ''}
+    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;">
+      ${stagePrev[o.stage] ? `<button onclick="moveOpp('${o.id}','${stagePrev[o.stage]}')" style="font-size:10px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:2px 6px;cursor:pointer;">◀</button>` : ''}
+      ${stageNext[o.stage] ? `<button onclick="moveOpp('${o.id}','${stageNext[o.stage]}')" style="font-size:10px;background:rgba(74,158,232,0.1);border:1px solid rgba(74,158,232,0.3);color:var(--azure);padding:2px 6px;cursor:pointer;">▶ Avanzar</button>` : ''}
+      <button onclick="editOpp('${o.id}')" style="font-size:10px;background:rgba(74,158,232,0.1);border:1px solid rgba(74,158,232,0.2);color:var(--azure);padding:2px 6px;cursor:pointer;margin-left:auto;">✏ Editar</button>
+    </div>`;
+  return div;
+}
+
+async function moveOpp(id, newStage) {
+  await sbPatch('opportunities', id, { stage: newStage, updated_at: new Date().toISOString() });
+  toast('Oportunidad movida');
+  loadPipeline();
+}
+
+function openModal(stage) {
+  currentStage = stage;
+  editingOppId = null;
+  document.getElementById('modal-opp-title').textContent = 'Nueva Oportunidad';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-value').value = '';
+  document.getElementById('f-next').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-stage').value = stage;
+  document.getElementById('btn-delete-opp').style.display = 'none';
+  document.getElementById('modal-opp').classList.add('open');
+}
+
+async function editOpp(id) {
+  const data = await sbGet('opportunities', `id=eq.${id}`);
+  if (!data[0]) return;
+  const o = data[0];
+  editingOppId = id;
+  document.getElementById('modal-opp-title').textContent = 'Editar Oportunidad';
+  document.getElementById('f-name').value = o.name;
+  document.getElementById('f-bu').value = o.bu;
+  document.getElementById('f-vertical').value = o.vertical || '';
+  document.getElementById('f-value').value = o.value || '';
+  document.getElementById('f-stage').value = o.stage;
+  document.getElementById('f-next').value = o.next_step || '';
+  document.getElementById('f-notes').value = o.notes || '';
+  document.getElementById('btn-delete-opp').style.display = 'block';
+  document.getElementById('modal-opp').classList.add('open');
+}
+
+async function saveOpp() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('btn-save-opp');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const body = {
+    name,
+    bu: document.getElementById('f-bu').value,
+    vertical: document.getElementById('f-vertical').value,
+    value: parseInt(document.getElementById('f-value').value) || 0,
+    stage: document.getElementById('f-stage').value,
+    next_step: document.getElementById('f-next').value,
+    notes: document.getElementById('f-notes').value,
+    updated_at: new Date().toISOString()
+  };
+  if (editingOppId) {
+    await sbPatch('opportunities', editingOppId, body);
+    toast('Oportunidad actualizada ✓');
+  } else {
+    await sbPost('opportunities', body);
+    toast('Oportunidad creada ✓');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Guardar';
+  document.getElementById('modal-opp').classList.remove('open');
+  loadPipeline();
+}
+
+async function deleteOpp() {
+  if (!editingOppId) return;
+  if (!confirm('¿Eliminar esta oportunidad?')) return;
+  await sbDelete('opportunities', editingOppId);
+  toast('Oportunidad eliminada');
+  document.getElementById('modal-opp').classList.remove('open');
+  loadPipeline();
+}
+
+function closeModalOpp(e) { if (e.target === document.getElementById('modal-opp')) document.getElementById('modal-opp').classList.remove('open'); }
+
+// ---- DEALS ----
+async function loadDeals() {
+  document.getElementById('deals-loading').style.display = 'flex';
+  document.getElementById('deals-table').style.display = 'none';
+  document.getElementById('deals-empty').style.display = 'none';
+
+  const deals = await sbGet('deals', 'order=closed_at.desc');
+  document.getElementById('deals-loading').style.display = 'none';
+  document.getElementById('deals-count').textContent = deals.length;
+
+  if (deals.length === 0) {
+    document.getElementById('deals-empty').style.display = 'block';
+    document.getElementById('deals-total').textContent = '$0';
+    document.getElementById('deals-monthly').textContent = '—';
+    return;
+  }
+
+  const total = deals.reduce((s, d) => s + (d.value || 0), 0);
+  document.getElementById('deals-total').textContent = '$' + total.toLocaleString();
+  document.getElementById('deals-monthly').textContent = deals[0] ? new Date(deals[0].closed_at).toLocaleDateString('es-AR', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+
+  const tbody = document.getElementById('deals-tbody');
+  tbody.innerHTML = '';
+  deals.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${d.name}</td>
+      <td><span class="badge ${d.bu==='apex'?'badge-green':'badge-azure'}">${d.bu==='apex'?'Apex':'AdSmart'}</span></td>
+      <td style="color:var(--orange);font-family:'Barlow Condensed',sans-serif;font-weight:700;">$${(d.value||0).toLocaleString()}</td>
+      <td>${new Date(d.closed_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'})}</td>
+      <td style="font-size:12px;">${d.notes||'—'}</td>
+      <td><button onclick="deleteDeal('${d.id}')" style="font-size:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);padding:2px 8px;cursor:pointer;">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('deals-table').style.display = 'table';
+}
+
+function openDealModal() {
+  document.getElementById('d-name').value = '';
+  document.getElementById('d-value').value = '';
+  document.getElementById('d-notes').value = '';
+  document.getElementById('modal-deal').classList.add('open');
+}
+
+async function saveDeal() {
+  const name = document.getElementById('d-name').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('btn-save-deal');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  await sbPost('deals', {
+    name,
+    bu: document.getElementById('d-bu').value,
+    value: parseInt(document.getElementById('d-value').value) || 0,
+    notes: document.getElementById('d-notes').value,
+    closed_at: new Date().toISOString()
+  });
+  toast('¡Cierre registrado! 🎉');
+  btn.disabled = false; btn.textContent = 'Registrar';
+  document.getElementById('modal-deal').classList.remove('open');
+  loadDeals();
+}
+
+async function deleteDeal(id) {
+  if (!confirm('¿Eliminar este cierre?')) return;
+  await sbDelete('deals', id);
+  toast('Cierre eliminado');
+  loadDeals();
+}
+
+function closeModalDeal(e) { if (e.target === document.getElementById('modal-deal')) document.getElementById('modal-deal').classList.remove('open'); }
+
+// ---- SPRINT ----
+const defaultSprint = [
+  { day:'LUN', tasks:[{text:'Briefing diario (AdSmart Agent)',done:false},{text:'Seguimiento oportunidad Minería',done:false},{text:'LinkedIn post — AI para O&G',done:false}]},
+  { day:'MAR', tasks:[{text:'Call discovery nuevo prospect',done:false},{text:'Actualizar pipeline board',done:false}]},
+  { day:'MIE', tasks:[{text:'Revisión Apex: stock + logística',done:false},{text:'Avance eCommerce Apex',done:false}]},
+  { day:'JUE', tasks:[{text:'Propuesta AdSmart en curso',done:false},{text:'Reunión interna equipo',done:false}]},
+  { day:'VIE', tasks:[{text:'Review semanal KPIs',done:false},{text:'Plan sprint siguiente semana',done:false},{text:'Contenido LinkedIn semana próxima',done:false}]}
+];
+
+async function loadSprint() {
+  const grid = document.getElementById('sprint-grid');
+  const today = new Date().toISOString().split('T')[0];
+  let tasks = await sbGet('sprint_tasks', `week_start=eq.${today}&order=day.asc`);
+
+  if (tasks.length === 0) {
+    // Seed con defaults
+    const inserts = [];
+    defaultSprint.forEach(d => d.tasks.forEach(t => inserts.push({ day: d.day, text: t.text, done: false, week_start: today })));
+    for (const t of inserts) await sbPost('sprint_tasks', t);
+    tasks = await sbGet('sprint_tasks', `week_start=eq.${today}&order=day.asc`);
+  }
+
+  const days = ['LUN','MAR','MIE','JUE','VIE'];
+  grid.innerHTML = '';
+  days.forEach(day => {
+    const dayTasks = tasks.filter(t => t.day === day);
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    col.innerHTML = `<div class="day-name">${day}</div>`;
+    dayTasks.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'task-item' + (t.done ? ' done' : '');
+      item.innerHTML = `<div class="task-cb">${t.done ? '✓' : ''}</div><span>${t.text}</span>`;
+      item.onclick = async () => {
+        await sbPatch('sprint_tasks', t.id, { done: !t.done, updated_at: new Date().toISOString() });
+        loadSprint();
+      };
+      col.appendChild(item);
+    });
+    grid.appendChild(col);
+  });
+}
+
+// ---- INIT ----
+loadPipeline();
+</script>
+</body>
+</html>
