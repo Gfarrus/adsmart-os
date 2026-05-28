@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Hunter Industry — AdSmart</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0A1628; --navy-mid: #0D1F3C; --navy-light: #142850;
+    --azure: #4A9EE8; --orange: #F97316; --orange-dim: #C45A0E;
+    --white: #FFFFFF; --gray-400: #8A9BB5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--navy); color: var(--white); font-family: 'Barlow', sans-serif; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(74,158,232,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(74,158,232,0.04) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none; z-index: 0;
+  }
+  section { position: relative; z-index: 1; }
+
+  /* ── LANG TOGGLE ── */
+  .lang-toggle {
+    display: flex; gap: 0; align-items: center;
+    border: 1px solid rgba(74,158,232,0.25);
+  }
+  .lang-btn {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 7px 14px; cursor: pointer; border: none;
+    background: transparent; color: var(--gray-400);
+    transition: all 0.2s;
+  }
+  .lang-btn.active { background: var(--azure); color: var(--white); }
+  .lang-btn:hover:not(.active) { color: var(--white); }
+
+  /* ── HIDDEN LANG CONTENT ── */
+  [data-lang] { display: none; }
+  .lang-es [data-lang="es"] { display: contents; }
+  .lang-en [data-lang="en"] { display: contents; }
+  /* For block elements that need display:block instead of contents */
+  .lang-es [data-lang="es"].block-el { display: block; }
+  .lang-en [data-lang="en"].block-el { display: block; }
+  .lang-es [data-lang="es"].flex-el { display: flex; }
+  .lang-en [data-lang="en"].flex-el { display: flex; }
+  .lang-es [data-lang="es"].grid-el { display: grid; }
+  .lang-en [data-lang="en"].grid-el { display: grid; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 8vw; display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(180deg, rgba(10,22,40,0.98) 0%, transparent 100%);
+    backdrop-filter: blur(8px);
+  }
+  .logo-text {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+    font-size: 28px; color: var(--white); letter-spacing: 0.5px; line-height: 1;
+  }
+  .logo-dot { color: #F97316; margin-left: 2px; font-size: 22px; vertical-align: middle; }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 120px 8vw 80px; position: relative; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; top: -200px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(74,158,232,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 4px; color: var(--orange); text-transform: uppercase; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+  .hero-eyebrow::before { content: ''; width: 32px; height: 2px; background: var(--orange); }
+  .hero-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(64px, 10vw, 120px); line-height: 0.9; text-transform: uppercase; letter-spacing: -2px; margin-bottom: 8px; }
+  .hero-title .line-azure { color: var(--azure); }
+  .hero-title .line-orange { color: var(--orange); }
+  .hero-sub { font-family: 'Barlow Condensed', sans-serif; font-weight: 400; font-size: clamp(18px, 2.5vw, 26px); color: var(--gray-400); letter-spacing: 1px; margin-top: 20px; margin-bottom: 48px; max-width: 640px; line-height: 1.4; }
+  .hero-tags { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+  .tag { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; padding: 8px 16px; border: 1px solid rgba(74,158,232,0.3); color: var(--azure); background: rgba(74,158,232,0.06); }
+  .tag.orange { border-color: rgba(249,115,22,0.3); color: var(--orange); background: rgba(249,115,22,0.06); }
+  .hero-metric-row { display: flex; gap: 48px; flex-wrap: wrap; }
+  .hero-metric { display: flex; flex-direction: column; gap: 4px; }
+  .hero-metric-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 48px; color: var(--white); line-height: 1; }
+  .hero-metric-num span { color: var(--orange); }
+  .hero-metric-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-400); }
+
+  .divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, rgba(74,158,232,0.3), transparent); }
+
+  /* SECTION COMMON */
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 5px; color: var(--orange); text-transform: uppercase; margin-bottom: 48px; display: flex; align-items: center; gap: 16px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: rgba(249,115,22,0.2); max-width: 200px; }
+  .section-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(40px, 5vw, 64px); text-transform: uppercase; line-height: 0.95; letter-spacing: -1px; }
+  .section-title .accent { color: var(--azure); }
+
+  /* PROBLEMA */
+  .problem { padding: 100px 8vw; background: var(--navy-mid); }
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .problem-item { padding: 36px; background: var(--navy); border-left: 3px solid transparent; transition: border-color 0.3s; }
+  .problem-item:hover { border-left-color: var(--orange); }
+  .problem-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 72px; color: rgba(249,115,22,0.1); line-height: 1; margin-bottom: 8px; }
+  .problem-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color: var(--white); margin-bottom: 12px; }
+  .problem-text { font-size: 14px; line-height: 1.7; color: var(--gray-400); }
+
+  /* SOLUCIÓN */
+  .solution { padding: 100px 8vw; }
+  .solution-top { display: grid; grid-template-columns: 1fr 1.6fr; gap: 80px; align-items: end; }
+  .solution-top-left .section-label { margin-bottom: 24px; }
+  .solution-intro { font-size: 16px; line-height: 1.8; color: var(--gray-400); }
+  .solution-metrics-bar { display: flex; align-items: center; margin: 56px 0 56px; background: var(--navy-mid); border: 1px solid rgba(74,158,232,0.12); }
+  .sol-metric-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 36px 24px; text-align: center; }
+  .sol-metric-divider { width: 1px; height: 60px; background: rgba(74,158,232,0.15); flex-shrink: 0; }
+  .sol-metric-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 52px; color: var(--white); line-height: 1; }
+  .sol-metric-num span { color: var(--orange); font-size: 32px; }
+  .sol-metric-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gray-400); }
+
+  /* PILLARS */
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .pillar { background: var(--navy-mid); padding: 48px 36px; position: relative; overflow: hidden; transition: transform 0.3s; }
+  .pillar:hover { transform: translateY(-4px); }
+  .pillar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--azure); }
+  .pillar:nth-child(2)::before { background: var(--orange); }
+  .pillar:nth-child(3)::before { background: linear-gradient(90deg, var(--azure), var(--orange)); }
+  .icon-line { width: 40px; height: 40px; margin-bottom: 24px; display: block; }
+  .pillar-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 28px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--white); }
+  .pillar-desc { font-size: 14px; line-height: 1.7; color: var(--gray-400); margin-bottom: 24px; }
+  .pillar-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .pillar-features li { font-size: 13px; color: var(--gray-400); display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+  .pillar-features li::before { content: '→'; color: var(--azure); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  /* TERRITORY */
+  .territory { padding: 100px 8vw; background: var(--navy-mid); }
+  .territory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 60px; }
+  .territory-card { background: var(--navy); padding: 48px 36px; position: relative; }
+  .territory-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--azure), transparent); }
+  .territory-icon { width: 32px; height: 32px; margin-bottom: 20px; display: block; }
+  .territory-zone { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 36px; text-transform: uppercase; color: var(--white); margin-bottom: 8px; }
+  .territory-sub { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 3px; color: var(--orange); text-transform: uppercase; margin-bottom: 24px; }
+  .territory-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .territory-list li { font-size: 13px; color: var(--gray-400); padding-left: 16px; position: relative; line-height: 1.5; }
+  .territory-list li::before { content: '·'; position: absolute; left: 0; color: var(--azure); font-size: 20px; line-height: 1.1; }
+
+  /* HOW */
+  .how { padding: 100px 8vw; }
+  .how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 64px; position: relative; }
+  .how-steps::before { content: ''; position: absolute; top: 32px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--azure), var(--orange), transparent); z-index: 0; }
+  .step { background: var(--navy-mid); padding: 40px 28px; position: relative; z-index: 1; }
+  .step-icon { width: 28px; height: 28px; margin-bottom: 20px; display: block; }
+  .step-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 56px; line-height: 1; color: rgba(74,158,232,0.1); margin-bottom: 16px; }
+  .step-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: var(--white); margin-bottom: 12px; }
+  .step-text { font-size: 13px; line-height: 1.7; color: var(--gray-400); }
+
+  /* COMMERCIAL */
+  .commercial { padding: 100px 8vw; background: var(--navy-mid); }
+  .commercial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 64px; }
+  .commercial-card { background: var(--navy); padding: 56px 48px; position: relative; overflow: hidden; }
+  .commercial-card.featured { background: linear-gradient(135deg, var(--navy-light) 0%, #0D2140 100%); border: 1px solid rgba(74,158,232,0.2); }
+  .commercial-card.featured::before { content: 'RECOMENDADO'; position: absolute; top: 24px; right: 24px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 3px; color: var(--orange); background: rgba(249,115,22,0.1); padding: 4px 12px; border: 1px solid rgba(249,115,22,0.2); }
+  .lang-en .commercial-card.featured::before { content: 'RECOMMENDED'; }
+  .commercial-type { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 4px; color: var(--azure); text-transform: uppercase; margin-bottom: 16px; }
+  .commercial-price { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 64px; line-height: 1; color: var(--white); margin-bottom: 4px; }
+  .commercial-price span { font-size: 28px; color: var(--gray-400); }
+  .commercial-period { font-size: 13px; color: var(--gray-400); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 32px; }
+  .commercial-includes { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .commercial-includes li { font-size: 14px; color: var(--gray-400); display: flex; align-items: flex-start; gap: 12px; line-height: 1.5; }
+  .check-icon { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+  .success-fee { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2); padding: 20px 24px; margin-top: 8px; }
+  .success-fee-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 3px; color: var(--orange); text-transform: uppercase; margin-bottom: 8px; }
+  .success-fee-text { font-size: 13px; color: var(--gray-400); line-height: 1.6; }
+  .paid-media-note { font-size: 11px; color: rgba(138,155,181,0.6); letter-spacing: 1px; margin-top: 12px; font-style: italic; }
+
+  /* TECH */
+  .tech { padding: 100px 8vw; }
+  .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 64px; }
+  .tech-item { background: var(--navy-mid); padding: 32px 28px; transition: background 0.3s; }
+  .tech-item:hover { background: var(--navy-light); }
+  .tech-icon { width: 32px; height: 32px; margin-bottom: 16px; display: block; }
+  .tech-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; color: var(--white); margin-bottom: 8px; }
+  .tech-desc { font-size: 12px; color: var(--gray-400); line-height: 1.5; }
+
+  /* WHY */
+  .why { padding: 100px 8vw; background: var(--navy-mid); }
+  .why-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 80px; align-items: start; margin-top: 64px; }
+  .why-big-stat { text-align: center; padding: 48px; background: var(--navy); border: 1px solid rgba(74,158,232,0.15); position: sticky; top: 80px; }
+  .why-stat-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 80px; line-height: 1; color: var(--azure); display: block; }
+  .why-stat-label { font-size: 13px; color: var(--gray-400); letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; display: block; }
+  .why-items { display: flex; flex-direction: column; gap: 2px; }
+  .why-item { background: var(--navy); padding: 32px 36px; display: flex; gap: 24px; align-items: flex-start; border-left: 3px solid transparent; transition: border-color 0.3s; }
+  .why-item:hover { border-left-color: var(--azure); }
+  .why-item-icon { width: 28px; height: 28px; flex-shrink: 0; margin-top: 2px; }
+  .why-item-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; text-transform: uppercase; color: var(--white); margin-bottom: 8px; }
+  .why-item-text { font-size: 14px; color: var(--gray-400); line-height: 1.7; }
+
+  /* CTA */
+  .cta-section { padding: 120px 8vw; text-align: center; position: relative; overflow: hidden; }
+  .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(249,115,22,0.08) 0%, transparent 70%); pointer-events: none; }
+  .cta-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(48px, 7vw, 88px); text-transform: uppercase; line-height: 0.9; letter-spacing: -1px; margin-bottom: 24px; }
+  .cta-title .orange { color: var(--orange); }
+  .cta-sub { font-size: 16px; color: var(--gray-400); max-width: 560px; margin: 0 auto 48px; line-height: 1.7; }
+  .cta-btn { display: inline-block; font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: 3px; text-transform: uppercase; background: var(--orange); color: var(--white); padding: 20px 48px; text-decoration: none; position: relative; transition: all 0.3s; }
+  .cta-btn::after { content: ''; position: absolute; inset: -3px; border: 1px solid rgba(249,115,22,0.4); pointer-events: none; transition: inset 0.3s; }
+  .cta-btn:hover { background: var(--orange-dim); }
+  .cta-btn:hover::after { inset: -6px; }
+
+  /* FOOTER */
+  footer { padding: 40px 8vw; border-top: 1px solid rgba(74,158,232,0.1); display: flex; justify-content: space-between; align-items: center; }
+  .footer-tagline { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 4px; color: var(--gray-400); text-transform: uppercase; margin-top: 6px; }
+  .footer-contact { font-size: 13px; color: var(--gray-400); text-align: right; line-height: 1.8; }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-eyebrow { animation: fadeInUp 0.6s ease forwards; }
+  .hero-title    { animation: fadeInUp 0.6s 0.1s ease both; }
+  .hero-sub      { animation: fadeInUp 0.6s 0.2s ease both; }
+  .hero-tags     { animation: fadeInUp 0.6s 0.3s ease both; }
+  .hero-metric-row { animation: fadeInUp 0.6s 0.4s ease both; }
+
+  @media (max-width: 900px) {
+    .problem-grid, .pillars, .territory-grid, .how-steps, .commercial-grid, .tech-grid, .why-grid, .solution-top { grid-template-columns: 1fr; }
+    .solution-metrics-bar { flex-wrap: wrap; }
+    .sol-metric-divider { display: none; }
+    .why-big-stat { position: static; }
+    nav { padding: 16px 5vw; }
+  }
+</style>
+</head>
+<body class="lang-es">
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <span class="logo-text">AdSmart<span class="logo-dot">●</span></span>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span data-lang="es">AdSmart · Go-to-Market Intelligence · 2026</span>
+    <span data-lang="en">AdSmart · Go-to-Market Intelligence · 2026</span>
+  </div>
+  <h1 class="hero-title">
+    <span class="line-azure">AI HUNTER</span><br>
+    <span>INDUSTRY</span><br>
+    <span class="line-orange">O&G · MINERÍA</span>
+  </h1>
+  <p class="hero-sub">
+    <span data-lang="es">Sistema inteligente de go-to-market para proveedores que quieren vender a Oil & Gas y Minería en Argentina. Presencia territorial real + Scoring Hunter AI + gestión activa de pipeline.</span>
+    <span data-lang="en">Intelligent go-to-market system for suppliers looking to sell into Oil & Gas and Mining in Argentina. Real territorial presence + Scoring Hunter AI + active pipeline management.</span>
+  </p>
+  <div class="hero-tags">
+    <span class="tag">Vaca Muerta</span>
+    <span class="tag">San Juan</span>
+    <span class="tag">Salta</span>
+    <span class="tag orange">Scoring Hunter AI</span>
+    <span class="tag orange"><span data-lang="es">Pipeline Inteligente</span><span data-lang="en">Intelligent Pipeline</span></span>
+  </div>
+  <div class="hero-metric-row">
+    <div class="hero-metric">
+      <span class="hero-metric-num">3<span>+</span></span>
+      <span class="hero-metric-label"><span data-lang="es">Cuencas activas</span><span data-lang="en">Active basins</span></span>
+    </div>
+    <div class="hero-metric">
+      <span class="hero-metric-num">1.200<span>+</span></span>
+      <span class="hero-metric-label"><span data-lang="es">Decisores mapeados</span><span data-lang="en">Mapped decision-makers</span></span>
+    </div>
+    <div class="hero-metric">
+      <span class="hero-metric-num">90<span>d</span></span>
+      <span class="hero-metric-label"><span data-lang="es">Primeros resultados</span><span data-lang="en">First results</span></span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROBLEMA -->
+<section class="problem">
+  <div class="section-label"><span data-lang="es">El Problema</span><span data-lang="en">The Problem</span></div>
+  <div class="problem-grid">
+    <div class="problem-item">
+      <div class="problem-num">01</div>
+      <div class="problem-title"><span data-lang="es">Sin presencia territorial</span><span data-lang="en">No territorial presence</span></div>
+      <p class="problem-text"><span data-lang="es">Vaca Muerta, Salta y San Juan son mercados relacionales. Sin red local, los ciclos de venta se extienden 12–18 meses o directamente no ocurren.</span><span data-lang="en">Vaca Muerta, Salta and San Juan are relationship-driven markets. Without a local network, sales cycles stretch 12–18 months or simply never happen.</span></p>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">02</div>
+      <div class="problem-title"><span data-lang="es">Inteligencia de mercado manual</span><span data-lang="en">Manual market intelligence</span></div>
+      <p class="problem-text"><span data-lang="es">Las empresas no saben quién toma decisiones reales, cuándo se abren licitaciones ni qué proyectos están en etapa de aprobación de presupuesto.</span><span data-lang="en">Companies don't know who the real decision-makers are, when tenders open, or which projects are in budget approval stage.</span></p>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">03</div>
+      <div class="problem-title"><span data-lang="es">Pipeline sin gestión sistemática</span><span data-lang="en">Unsystematic pipeline management</span></div>
+      <p class="problem-text"><span data-lang="es">Los equipos de ventas trabajan con Excel y WhatsApp. Sin scoring ni seguimiento automatizado, las oportunidades se pierden por falta de timing.</span><span data-lang="en">Sales teams work with Excel and WhatsApp. Without scoring or automated tracking, opportunities are lost due to poor timing.</span></p>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">04</div>
+      <div class="problem-title"><span data-lang="es">Costo de entrada prohibitivo</span><span data-lang="en">Prohibitive entry cost</span></div>
+      <p class="problem-text"><span data-lang="es">Armar un equipo comercial propio en estas geografías cuesta entre USD 8.000–15.000/mes. La mayoría de los proveedores medianos no puede sostenerlo.</span><span data-lang="en">Building an in-house sales team in these geographies costs USD 8,000–15,000/month. Most mid-size suppliers can't sustain it.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUCIÓN -->
+<section class="solution">
+  <div class="solution-top">
+    <div class="solution-top-left">
+      <div class="section-label"><span data-lang="es">La Solución</span><span data-lang="en">The Solution</span></div>
+      <h2 class="section-title"><span data-lang="es">LA<br><span class="accent">SOLUCIÓN</span><br>INTELIGENTE</span><span data-lang="en">THE<br><span class="accent">INTELLIGENT</span><br>SOLUTION</span></h2>
+    </div>
+    <div class="solution-top-right">
+      <p class="solution-intro">
+        <span data-lang="es">AI Hunter Industry combina presencia territorial real en las tres cuencas con un sistema de inteligencia y scoring potenciado por IA. El Scoring Hunter AI califica oportunidades automáticamente y el pipeline se gestiona activamente por el equipo AdSmart — con desempeño de área comercial interna, a fracción del costo.</span>
+        <span data-lang="en">AI Hunter Industry combines real territorial presence across three basins with an AI-powered intelligence and scoring system. The Scoring Hunter AI automatically qualifies opportunities and the pipeline is actively managed by the AdSmart team — delivering in-house commercial performance at a fraction of the cost.</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="solution-metrics-bar">
+    <div class="sol-metric-bar">
+      <span class="sol-metric-num">3<span>+</span></span>
+      <span class="sol-metric-label"><span data-lang="es">Cuencas activas</span><span data-lang="en">Active basins</span></span>
+    </div>
+    <div class="sol-metric-divider"></div>
+    <div class="sol-metric-bar">
+      <span class="sol-metric-num">1.200<span>+</span></span>
+      <span class="sol-metric-label"><span data-lang="es">Decisores mapeados</span><span data-lang="en">Mapped decision-makers</span></span>
+    </div>
+    <div class="sol-metric-divider"></div>
+    <div class="sol-metric-bar">
+      <span class="sol-metric-num">90<span>d</span></span>
+      <span class="sol-metric-label"><span data-lang="es">Primeros resultados</span><span data-lang="en">First results</span></span>
+    </div>
+    <div class="sol-metric-divider"></div>
+    <div class="sol-metric-bar">
+      <span class="sol-metric-num">3<span> UN</span></span>
+      <span class="sol-metric-label"><span data-lang="es">Territorios simultáneos</span><span data-lang="en">Simultaneous territories</span></span>
+    </div>
+  </div>
+
+  <div class="pillars">
+    <div class="pillar">
+      <svg class="icon-line" viewBox="0 0 40 40" fill="none"><path d="M20 4C14.477 4 10 8.477 10 14c0 8.25 10 22 10 22s10-13.75 10-22c0-5.523-4.477-10-10-10z" stroke="#6B7FA3" stroke-width="1.5" stroke-linejoin="round"/><circle cx="20" cy="14" r="3.5" stroke="#6B7FA3" stroke-width="1.5"/></svg>
+      <div class="pillar-title"><span data-lang="es">Presencia Territorial</span><span data-lang="en">Territorial Presence</span></div>
+      <p class="pillar-desc"><span data-lang="es">Red activa en Neuquén/Vaca Muerta, San Juan y Salta. Contacto directo con operadoras, contratistas y decisores de compra.</span><span data-lang="en">Active network in Neuquén/Vaca Muerta, San Juan and Salta. Direct contact with operators, contractors and procurement decision-makers.</span></p>
+      <ul class="pillar-features">
+        <li><span data-lang="es">Red C-Level y gerencial en las tres cuencas</span><span data-lang="en">C-Level and managerial network across three basins</span></li>
+        <li><span data-lang="es">Asistencia a eventos y rondas sectoriales</span><span data-lang="en">Attendance at sector events and business rounds</span></li>
+        <li><span data-lang="es">Reuniones presenciales con prospects calificados</span><span data-lang="en">In-person meetings with qualified prospects</span></li>
+        <li><span data-lang="es">Inteligencia de campo: licitaciones, expansiones, mantenimiento</span><span data-lang="en">Field intelligence: tenders, expansions, maintenance</span></li>
+      </ul>
+    </div>
+    <div class="pillar">
+      <svg class="icon-line" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="#6B7FA3" stroke-width="1.5"/><circle cx="20" cy="20" r="8" stroke="#6B7FA3" stroke-width="1.5"/><circle cx="20" cy="20" r="2.5" stroke="#6B7FA3" stroke-width="1.5"/><line x1="20" y1="4" x2="20" y2="10" stroke="#6B7FA3" stroke-width="1.5" stroke-linecap="round"/><line x1="20" y1="30" x2="20" y2="36" stroke="#6B7FA3" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="20" x2="10" y2="20" stroke="#6B7FA3" stroke-width="1.5" stroke-linecap="round"/><line x1="30" y1="20" x2="36" y2="20" stroke="#6B7FA3" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="pillar-title">Scoring Hunter AI</div>
+      <p class="pillar-desc"><span data-lang="es">Motor de inteligencia que detecta, califica y prioriza oportunidades en tiempo real. Cada prospect recibe un score dinámico según señales de compra, cargo y momento de mercado — generando pipeline automáticamente.</span><span data-lang="en">Intelligence engine that detects, qualifies and prioritizes opportunities in real time. Each prospect receives a dynamic score based on buying signals, role and market timing — automatically generating pipeline.</span></p>
+      <ul class="pillar-features">
+        <li><span data-lang="es">Directorio AI +1.200 decisores O&G/Minería verificados</span><span data-lang="en">AI directory of +1,200 verified O&G/Mining decision-makers</span></li>
+        <li><span data-lang="es">Score dinámico por oportunidad y timing de mercado</span><span data-lang="en">Dynamic scoring per opportunity and market timing</span></li>
+        <li><span data-lang="es">Activación de todos los canales: Email, DV360, LinkedIn, WhatsApp</span><span data-lang="en">All-channel activation: Email, DV360, LinkedIn, WhatsApp</span></li>
+        <li><span data-lang="es">Pipeline inteligente generado y priorizado automáticamente</span><span data-lang="en">Pipeline automatically generated and prioritized</span></li>
+      </ul>
+    </div>
+    <div class="pillar">
+      <svg class="icon-line" viewBox="0 0 40 40" fill="none"><rect x="5" y="10" width="7" height="22" rx="1" stroke="#6B7FA3" stroke-width="1.5"/><rect x="16.5" y="16" width="7" height="16" rx="1" stroke="#6B7FA3" stroke-width="1.5"/><rect x="28" y="22" width="7" height="10" rx="1" stroke="#6B7FA3" stroke-width="1.5"/><line x1="3" y1="36" x2="37" y2="36" stroke="#6B7FA3" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="pillar-title"><span data-lang="es">Gestión de Pipeline</span><span data-lang="en">Pipeline Management</span></div>
+      <p class="pillar-desc"><span data-lang="es">Seguimiento activo de cada oportunidad con dashboard en tiempo real, reportería ejecutiva y gestión de próximos pasos por el equipo AdSmart.</span><span data-lang="en">Active tracking of every opportunity with real-time dashboard, executive reporting and next-step management by the AdSmart team.</span></p>
+      <ul class="pillar-features">
+        <li><span data-lang="es">Dashboard AdSmart OS en tiempo real</span><span data-lang="en">AdSmart OS real-time dashboard</span></li>
+        <li><span data-lang="es">Alertas automáticas de oportunidades detectadas</span><span data-lang="en">Automatic alerts for detected opportunities</span></li>
+        <li><span data-lang="es">Reporte semanal ejecutivo de avance</span><span data-lang="en">Weekly executive progress report</span></li>
+        <li><span data-lang="es">Follow-up y nurturing incluido en el fee</span><span data-lang="en">Follow-up and nurturing included in the fee</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TERRITORY -->
+<section class="territory">
+  <div class="section-label"><span data-lang="es">Cobertura Territorial</span><span data-lang="en">Territorial Coverage</span></div>
+  <div class="territory-grid">
+    <div class="territory-card">
+      <svg class="territory-icon" viewBox="0 0 32 32" fill="none"><path d="M16 3C16 3 9 10 9 17c0 3.866 3.134 7 7 7s7-3.134 7-7c0-7-7-14-7-14z" stroke="#6B7FA3" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 19c0 2.209 1.791 4 4 4" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="24" x2="16" y2="29" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="10" y1="29" x2="22" y2="29" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="territory-zone">Vaca Muerta</div>
+      <div class="territory-sub">Neuquén · <span data-lang="es">Epicentro</span><span data-lang="en">Epicenter</span></div>
+      <ul class="territory-list">
+        <li>YPF, TotalEnergies, Shell, Vista Energy</li>
+        <li>Pan American Energy, Tecpetrol, Pluspetrol</li>
+        <li>Polo Tecnológico Neuquén</li>
+        <li><span data-lang="es">Proveedores Tier 1 y Tier 2 activos</span><span data-lang="en">Active Tier 1 and Tier 2 suppliers</span></li>
+      </ul>
+    </div>
+    <div class="territory-card">
+      <svg class="territory-icon" viewBox="0 0 32 32" fill="none"><path d="M16 3C11.582 3 8 6.582 8 11c0 7.5 8 18 8 18s8-10.5 8-18c0-4.418-3.582-8-8-8z" stroke="#6B7FA3" stroke-width="1.4" stroke-linejoin="round"/><circle cx="16" cy="11" r="3" stroke="#6B7FA3" stroke-width="1.4"/></svg>
+      <div class="territory-zone">Salta</div>
+      <div class="territory-sub">NOA · Oil & Gas</div>
+      <ul class="territory-list">
+        <li>YPF, Pluspetrol Norte, Repsol</li>
+        <li><span data-lang="es">Cuenca Noroeste: Tartagal, Mosconi</span><span data-lang="en">Northwest Basin: Tartagal, Mosconi</span></li>
+        <li><span data-lang="es">Exploración y producción activa</span><span data-lang="en">Active exploration and production</span></li>
+        <li><span data-lang="es">Proyectos de gas y petróleo en expansión</span><span data-lang="en">Gas and oil projects in expansion</span></li>
+      </ul>
+    </div>
+    <div class="territory-card">
+      <svg class="territory-icon" viewBox="0 0 32 32" fill="none"><path d="M2 26 L10 12 L16 20 L21 14 L30 26Z" stroke="#6B7FA3" stroke-width="1.4" stroke-linejoin="round"/><circle cx="21" cy="9" r="3" stroke="#6B7FA3" stroke-width="1.4"/><line x1="21" y1="6" x2="21" y2="3" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="territory-zone">San Juan</div>
+      <div class="territory-sub">Cuyo · <span data-lang="es">Minería</span><span data-lang="en">Mining</span></div>
+      <ul class="territory-list">
+        <li>Barrick Gold, Veladero, Pascua-Lama</li>
+        <li>Lundin Mining, McEwen Mining</li>
+        <li><span data-lang="es">Proveedores de equipamiento y servicios</span><span data-lang="en">Equipment and service suppliers</span></li>
+        <li><span data-lang="es">Proyectos de litio en expansión (Puna)</span><span data-lang="en">Lithium projects in expansion (Puna)</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="section-label"><span data-lang="es">Cómo Funciona</span><span data-lang="en">How It Works</span></div>
+  <div class="how-steps">
+    <div class="step">
+      <svg class="step-icon" viewBox="0 0 28 28" fill="none"><rect x="5" y="4" width="18" height="21" rx="2" stroke="#6B7FA3" stroke-width="1.4"/><path d="M10 4V3a1 1 0 011-1h6a1 1 0 011 1v1" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><path d="M9 14l3 3 7-7" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="step-num">01</div>
+      <div class="step-title"><span data-lang="es">Onboarding & Mapeo</span><span data-lang="en">Onboarding & Mapping</span></div>
+      <p class="step-text"><span data-lang="es">Semanas 1–2. Análisis de propuesta de valor, configuración del Scoring Hunter AI con criterios específicos, mapeo de decisores en cuencas relevantes.</span><span data-lang="en">Weeks 1–2. Value proposition analysis, Scoring Hunter AI setup with specific criteria, decision-maker mapping across relevant basins.</span></p>
+    </div>
+    <div class="step">
+      <svg class="step-icon" viewBox="0 0 28 28" fill="none"><path d="M16 3L6 16h8l-2 9 12-13h-8l2-9z" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="step-num">02</div>
+      <div class="step-title"><span data-lang="es">Activación de Inteligencia</span><span data-lang="en">Intelligence Activation</span></div>
+      <p class="step-text"><span data-lang="es">Semanas 3–4. Scoring Hunter AI en vivo, activación de todos los canales, primeros contactos territoriales en cuencas target.</span><span data-lang="en">Weeks 3–4. Scoring Hunter AI live, all-channel activation, first territorial contacts in target basins.</span></p>
+    </div>
+    <div class="step">
+      <svg class="step-icon" viewBox="0 0 28 28" fill="none"><polyline points="2,14 7,14 10,6 14,22 17,11 20,14 26,14" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="step-num">03</div>
+      <div class="step-title"><span data-lang="es">Gestión de Pipeline</span><span data-lang="en">Pipeline Management</span></div>
+      <p class="step-text"><span data-lang="es">Mes 2 en adelante. Seguimiento activo de oportunidades priorizadas por Scoring Hunter AI, gestión de reuniones y nurturing sistemático.</span><span data-lang="en">Month 2 onward. Active follow-up on opportunities prioritized by Scoring Hunter AI, meeting management and systematic nurturing.</span></p>
+    </div>
+    <div class="step">
+      <svg class="step-icon" viewBox="0 0 28 28" fill="none"><polyline points="2,20 9,13 14,18 26,6" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="19,6 26,6 26,13" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="step-num">04</div>
+      <div class="step-title"><span data-lang="es">Cierre & Escala</span><span data-lang="en">Close & Scale</span></div>
+      <p class="step-text"><span data-lang="es">Mes 3+. Acompañamiento en cierre de oportunidades maduras. Success fee sobre negocio generado. Expansión según resultados.</span><span data-lang="en">Month 3+. Support in closing mature opportunities. Success fee on generated business. Expansion based on results.</span></p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MODELO COMERCIAL -->
+<section class="commercial">
+  <div class="section-label"><span data-lang="es">Modelo Comercial</span><span data-lang="en">Commercial Model</span></div>
+  <div class="commercial-grid">
+
+    <!-- PLAN BASE -->
+    <div class="commercial-card">
+      <div class="commercial-type"><span data-lang="es">Plan Base</span><span data-lang="en">Base Plan</span></div>
+      <div class="commercial-price">USD <span>2.000</span></div>
+      <div class="commercial-period"><span data-lang="es">por mes · contrato mínimo 3 meses</span><span data-lang="en">per month · minimum 3-month contract</span></div>
+      <ul class="commercial-includes">
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">15 hs de gestión por mes</span><span data-lang="en">15 hrs management per month</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">1 viaje presencial por mes — reuniones en campo + evento territorial</span><span data-lang="en">1 in-person trip per month — field meetings + territorial event</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Scoring Hunter AI — segmento definido</span><span data-lang="en">Scoring Hunter AI — defined segment</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Directorio AI +1.200 decisores verificados</span><span data-lang="en">AI directory of +1,200 verified decision-makers</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Activación todos los canales (email, LinkedIn, DV360, WhatsApp)</span><span data-lang="en">All-channel activation (email, LinkedIn, DV360, WhatsApp)</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Presencia en 1 cuenca</span><span data-lang="en">Presence in 1 basin</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Pipeline inteligente + reporte semanal ejecutivo</span><span data-lang="en">Intelligent pipeline + weekly executive report</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Mesa de Trabajo AI: 2 agentes especializados</span><span data-lang="en">AI Work Desk: 2 specialized agents</span>
+        </li>
+      </ul>
+      <div class="success-fee">
+        <div class="success-fee-label">+ Success Fee</div>
+        <div class="success-fee-text"><span data-lang="es">5–10% sobre primer negocio cerrado generado por el sistema. Ganamos cuando vos ganás.</span><span data-lang="en">5–10% on first closed deal generated by the system. We win when you win.</span></div>
+      </div>
+      <p class="paid-media-note"><span data-lang="es">* Paid media (inversión en pauta) se cotiza y factura por separado.</span><span data-lang="en">* Paid media (ad spend) is quoted and billed separately.</span></p>
+    </div>
+
+    <!-- COMBO RECOMENDADO -->
+    <div class="commercial-card featured">
+      <div class="commercial-type"><span data-lang="es">Combo Recomendado</span><span data-lang="en">Recommended Combo</span></div>
+      <div class="commercial-price">USD <span>3.800</span></div>
+      <div class="commercial-period"><span data-lang="es">por mes · contrato 6 meses</span><span data-lang="en">per month · 6-month contract</span></div>
+      <ul class="commercial-includes">
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">20 hs de gestión por mes</span><span data-lang="en">20 hrs management per month</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Hasta 3 viajes presenciales por mes — reuniones en campo + eventos</span><span data-lang="en">Up to 3 in-person trips per month — field meetings + events</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Todo lo del plan base</span><span data-lang="en">Everything in the base plan</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Presencia en 3 cuencas (VM + Salta + SJ)</span><span data-lang="en">Presence in 3 basins (VM + Salta + SJ)</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Scoring Hunter AI avanzado + todos los canales</span><span data-lang="en">Advanced Scoring Hunter AI + all channels</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Mesa de Trabajo AI completa — 10 agentes C-Suite</span><span data-lang="en">Full AI Work Desk — 10 C-Suite agents</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">AdSmart OS dashboard en tiempo real</span><span data-lang="en">AdSmart OS real-time dashboard</span>
+        </li>
+        <li>
+          <svg class="check-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#6B7FA3" stroke-width="1.2"/><path d="M5 8 L7 10 L11 6" stroke="#6B7FA3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-lang="es">Gestión activa de reuniones, follow-up y acompañamiento en cierre</span><span data-lang="en">Active meeting management, follow-up and closing support</span>
+        </li>
+      </ul>
+      <div class="success-fee">
+        <div class="success-fee-label">+ Success Fee</div>
+        <div class="success-fee-text"><span data-lang="es">5–10% sobre primer negocio cerrado. Alineación total de incentivos: ganamos cuando vos ganás.</span><span data-lang="en">5–10% on first closed deal. Full incentive alignment: we win when you win.</span></div>
+      </div>
+      <p class="paid-media-note"><span data-lang="es">* Paid media (inversión en pauta) se cotiza y factura por separado.</span><span data-lang="en">* Paid media (ad spend) is quoted and billed separately.</span></p>
+    </div>
+
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech">
+  <div class="section-label"><span data-lang="es">Stack Tecnológico</span><span data-lang="en">Technology Stack</span></div>
+  <div class="tech-grid">
+    <div class="tech-item">
+      <svg class="tech-icon" viewBox="0 0 32 32" fill="none"><rect x="8" y="8" width="16" height="16" rx="2" stroke="#6B7FA3" stroke-width="1.4"/><rect x="11" y="11" width="10" height="10" rx="1" stroke="#6B7FA3" stroke-width="1.4"/><line x1="12" y1="8" x2="12" y2="5" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="8" x2="16" y2="5" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="20" y1="8" x2="20" y2="5" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="24" x2="12" y2="27" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="24" x2="16" y2="27" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="20" y1="24" x2="20" y2="27" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="12" x2="5" y2="12" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="16" x2="5" y2="16" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="20" x2="5" y2="20" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="24" y1="12" x2="27" y2="12" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="24" y1="16" x2="27" y2="16" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="24" y1="20" x2="27" y2="20" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="tech-name">Scoring Hunter AI</div>
+      <p class="tech-desc"><span data-lang="es">Motor de scoring y detección de oportunidades. Califica cada prospect con score dinámico según señales de compra. Genera pipeline automáticamente.</span><span data-lang="en">Scoring and opportunity detection engine. Rates each prospect with a dynamic score based on buying signals. Automatically generates pipeline.</span></p>
+    </div>
+    <div class="tech-item">
+      <svg class="tech-icon" viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="9" rx="11" ry="4" stroke="#6B7FA3" stroke-width="1.4"/><path d="M5 9v7c0 2.209 4.925 4 11 4s11-1.791 11-4V9" stroke="#6B7FA3" stroke-width="1.4"/><path d="M5 16v7c0 2.209 4.925 4 11 4s11-1.791 11-4v-7" stroke="#6B7FA3" stroke-width="1.4"/></svg>
+      <div class="tech-name">Datiko / DV360</div>
+      <p class="tech-desc"><span data-lang="es">28M+ contactos argentinos verificados. Activación programática con segmentación por cargo, industria y geografía.</span><span data-lang="en">28M+ verified Argentine contacts. Programmatic activation with segmentation by role, industry and geography.</span></p>
+    </div>
+    <div class="tech-item">
+      <svg class="tech-icon" viewBox="0 0 32 32" fill="none"><rect x="2" y="4" width="28" height="19" rx="2" stroke="#6B7FA3" stroke-width="1.4"/><line x1="10" y1="27" x2="22" y2="27" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="23" x2="16" y2="27" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><polyline points="7,16 11,12 15,16 19,10 25,14" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="tech-name">AdSmart OS</div>
+      <p class="tech-desc"><span data-lang="es">Plataforma de comando y control. Dashboard en tiempo real de pipeline, cierres y performance por cuenca.</span><span data-lang="en">Command and control platform. Real-time dashboard of pipeline, closings and performance by basin.</span></p>
+    </div>
+    <div class="tech-item">
+      <svg class="tech-icon" viewBox="0 0 32 32" fill="none"><circle cx="12" cy="10" r="4" stroke="#6B7FA3" stroke-width="1.4"/><path d="M2 26c0-4.418 4.477-8 10-8" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><circle cx="22" cy="10" r="4" stroke="#6B7FA3" stroke-width="1.4"/><path d="M20 18c5.523 0 10 3.582 10 8" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/><path d="M12 26h8" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="tech-name"><span data-lang="es">Mesa de Trabajo AI</span><span data-lang="en">AI Work Desk</span></div>
+      <p class="tech-desc"><span data-lang="es">10 agentes C-Suite especializados: COO, CFO, CMO, CTO, Legal, IA, UX, Content, PM y Asistente Ejecutiva disponibles 24/7.</span><span data-lang="en">10 specialized C-Suite agents: COO, CFO, CMO, CTO, Legal, AI, UX, Content, PM and Executive Assistant available 24/7.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY ADSMART -->
+<section class="why">
+  <div class="section-label"><span data-lang="es">Por Qué AdSmart</span><span data-lang="en">Why AdSmart</span></div>
+  <div class="why-grid">
+    <div class="why-big-stat">
+      <span class="why-stat-num">20+</span>
+      <span class="why-stat-label"><span data-lang="es">Años en performance B2B en Argentina</span><span data-lang="en">Years in B2B performance in Argentina</span></span>
+    </div>
+    <div class="why-items">
+      <div class="why-item">
+        <svg class="why-item-icon" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="11" r="7" stroke="#6B7FA3" stroke-width="1.4"/><path d="M9.5 17.5L7 26l7-3 7 3-2.5-8.5" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <div class="why-item-title"><span data-lang="es">Track record comprobado</span><span data-lang="en">Proven track record</span></div>
+          <p class="why-item-text"><span data-lang="es">HSBC, Amex, BBVA, Ford Argentina, Grupo Kia México, CCU Argentina. Pioneros en programmatic advertising en Argentina desde 2007. IAB USA Expert Programático.</span><span data-lang="en">HSBC, Amex, BBVA, Ford Argentina, Grupo Kia México, CCU Argentina. Pioneers in programmatic advertising in Argentina since 2007. IAB USA Programmatic Expert.</span></p>
+        </div>
+      </div>
+      <div class="why-item">
+        <svg class="why-item-icon" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="11" stroke="#6B7FA3" stroke-width="1.4"/><path d="M3 14h22M14 3c-3 3-5 6.5-5 11s2 8 5 11M14 3c3 3 5 6.5 5 11s-2 8-5 11" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <div>
+          <div class="why-item-title"><span data-lang="es">Red territorial real en O&G</span><span data-lang="en">Real territorial network in O&G</span></div>
+          <p class="why-item-text"><span data-lang="es">No vendemos promesas de contactos. Tenemos red activa en Vaca Muerta, Salta y San Juan con perfiles ejecutivos en YPF, operadoras internacionales y el ecosistema proveedor.</span><span data-lang="en">We don't sell contact promises. We have an active network in Vaca Muerta, Salta and San Juan with executive profiles at YPF, international operators and the supplier ecosystem.</span></p>
+        </div>
+      </div>
+      <div class="why-item">
+        <svg class="why-item-icon" viewBox="0 0 28 28" fill="none"><rect x="3" y="3" width="22" height="22" rx="2" stroke="#6B7FA3" stroke-width="1.4"/><path d="M8 18 L11 14 L14 16 L17 11 L20 13" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 22 L20 22" stroke="#6B7FA3" stroke-width="1" stroke-linecap="round"/></svg>
+        <div>
+          <div class="why-item-title"><span data-lang="es">AI-Driven desde el día 1</span><span data-lang="en">AI-Driven from day 1</span></div>
+          <p class="why-item-text"><span data-lang="es">El Scoring Hunter AI no es un concepto de PowerPoint. Corre en producción hoy. El mismo sistema que gestiona nuestro negocio es el que activamos para nuestros clientes.</span><span data-lang="en">Scoring Hunter AI is not a PowerPoint concept. It runs in production today. The same system that manages our business is what we activate for our clients.</span></p>
+        </div>
+      </div>
+      <div class="why-item">
+        <svg class="why-item-icon" viewBox="0 0 28 28" fill="none"><path d="M2 16l4-4h5l3-3h5l4 4" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 16l5 5 3-2 4 3 4-2 5-4-4-4h-5l-3 3H7L2 16z" stroke="#6B7FA3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <div class="why-item-title"><span data-lang="es">Modelo de riesgo compartido</span><span data-lang="en">Shared risk model</span></div>
+          <p class="why-item-text"><span data-lang="es">El success fee no es un extra comercial. Es nuestra forma de demostrar convicción en los resultados. Si no generamos negocio, lo sentimos en el bolsillo también.</span><span data-lang="en">The success fee is not a commercial add-on. It's our way of demonstrating conviction in results. If we don't generate business, we feel it too.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="cta-title">MACHINE<br><span class="orange">RESULTS.</span><br>DELIVERED.</h2>
+  <p class="cta-sub">
+    <span data-lang="es">Agendá una sesión de diagnóstico de 30 minutos. Sin compromiso. Analizamos tu propuesta de valor y te mostramos en vivo qué oportunidades detecta el Scoring Hunter AI en tu segmento.</span>
+    <span data-lang="en">Schedule a 30-minute diagnostic session. No commitment. We analyze your value proposition and show you live what opportunities the Scoring Hunter AI detects in your segment.</span>
+  </p>
+  <a href="mailto:info@adsmartm.com" class="cta-btn">
+    <span data-lang="es">Agendar Diagnóstico</span><span data-lang="en">Schedule Diagnostic</span>
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <span class="logo-text">AdSmart<span class="logo-dot">●</span></span>
+    <div class="footer-tagline">Machine Results. Delivered.</div>
+  </div>
+  <div class="footer-contact">
+    info@adsmartm.com<br>
+    adsmartm.com · Buenos Aires, Argentina<br>
+    © 2026 AdSmart
+  </div>
+</footer>
+
+<script>
+  function setLang(lang) {
+    document.body.className = 'lang-' + lang;
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
+    });
+    document.documentElement.lang = lang;
+  }
+</script>
+</body>
+</html>
