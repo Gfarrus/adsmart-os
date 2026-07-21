@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Adsmart OS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A1628;
+      font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #0f1e35;
+      border: 1px solid #1e3a5f;
+      border-radius: 12px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .logo span { color: #4A9EE8; }
+    .subtitle {
+      font-size: 11px;
+      color: #4A9EE8;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+    }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: #0A1628;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus { border-color: #4A9EE8; }
+    input::placeholder { color: #3a5a80; }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #F97316;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+    button:hover { background: #ea6a0a; }
+    .error {
+      color: #F97316;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">ADSMART <span>OS</span></div>
+    <div class="subtitle">Business Command Center · 2026</div>
+    <input type="password" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')check()" autofocus />
+    <button onclick="check()">INGRESAR</button>
+    <div class="error" id="err">Contraseña incorrecta</div>
+  </div>
+
+  <script>
+    function check() {
+      const val = document.getElementById('pwd').value;
+      if (val === 'socio123') {
+        window.location.href = '/propuesta.html';
+      } else {
+        const err = document.getElementById('err');
+        err.style.display = 'block';
+        document.getElementById('pwd').value = '';
+        document.getElementById('pwd').focus();
+      }
+    }
+  </script>
+</body>
+</html>
